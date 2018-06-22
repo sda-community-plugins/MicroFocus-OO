@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://www.urbancode.com/PluginXMLSchema_v1">
+    <header>
+        <identifier version="1" id="com.urbancode.air.plugin.MicroFocus-OO"
+                    name="Micro Focus Operations Orchestration"/>
+        <description>The Micro Focus Operations Orchestration (OO) plugin allows you to execute Operations Orchestration
+            flows as part of a workflow.
+        </description>
+        <tag>Automation/Operations Orchestration</tag>
+    </header>
+    <!-- ==================================== -->
+    <!--  Execute Flow                        -->
+    <!-- ==================================== -->
+    <step-type name="Execute Flow">
+        <description>Execute a Micro Focus Operations Orchestration (OO) flow.</description>
+        <properties>
+            <property name="flowId" required="true">
+                <property-ui type="textBox" label="Flow Id" description="The uuid/name of the flow to execute."/>
+            </property>
+            <property name="runName">
+                <property-ui type="textBox" label="Run Name"
+                             description="The name of the execution run (for display purposes only)."/>
+            </property>
+            <property name="inputs">
+                <property-ui type="textAreaBox" label="Inputs"
+                             description="New line separated list of name=value inputs for the flow."/>
+            </property>
+            <property name="loglevel">
+                <property-ui type="selectBox" label="OO Log Level"
+                             description="The log level OO will use for execution."/>
+                <value label="STANDARD">STANDARD</value>
+                <value label="DEBUG">DEBUG</value>
+            </property>
+            <property name="serverUrl" required="true">
+                <property-ui type="textBox" default-value="${p:system/oo.serverUrl}" label="OO Server URL"
+                             description="The OO server URL, e.g. https://server:8443"/>
+            </property>
+            <property name="username">
+                <property-ui type="textBox" default-value="${p:system/oo.username}" label="OO Username"
+                             description="The username to connect to the OO server."/>
+            </property>
+            <property name="password">
+                <property-ui type="secureBox" default-value="${p:system/oo.password}" label="OO Password"
+                             description="The password to connect to the OO server."/>
+            </property>
+            <property name="waitForCompletion" required="false">
+                <property-ui type="checkBox" label="Wait for Completion" default-value="true"
+                             description="Select this option to wait until the execution has completed."/>
+            </property>
+            <property name="outputProp">
+                <property-ui type="textBox" default-value="flowPrimaryResult" hidden="true" label="Flow Result Property"
+                             description="The name of the property to set the flow's primary result to (if successful)"/>
+            </property>
+            <property name="delay">
+                <property-ui type="textBox" default-value="6000" hidden="true" label="Delay Interval"
+                             description="The delay (in ms) to wait before re-checking the status."/>
+            </property>
+            <property name="debugMode" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put(new java.lang.String("Status"), new java.lang.String("Failure"));
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/*"/>
+            <arg file="execute_flow.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+    <!-- ==================================== -->
+    <!--  Get Execution Status                -->
+    <!-- ==================================== -->
+    <step-type name="Get Execution Status">
+        <description>Get the status of a Micro Focus Operations Orchestration (OO) flow execution</description>
+        <properties>
+            <property name="executionId" required="true">
+                <property-ui type="textBox" label="Execution Id" default-value="${p:prevStep/executionId}"
+                             description="The execution id to check the status of."/>
+            </property>
+            <property name="serverUrl" required="true">
+                <property-ui type="textBox" default-value="${p:system/oo.serverUrl}" label="OO Server URL"
+                             description="The OO server URL, e.g. https://server:8443"/>
+            </property>
+            <property name="username">
+                <property-ui type="textBox" default-value="${p:system/oo.username}" label="OO Username"
+                             description="The username to connect to the OO server."/>
+            </property>
+            <property name="password">
+                <property-ui type="secureBox" default-value="${p:system/oo.password}" label="OO Password"
+                             description="The password to connect to the OO server."/>
+            </property>
+            <property name="waitForCompletion" required="false">
+                <property-ui type="checkBox" label="Wait for Completion" default-value="true"
+                             description="Select this option to wait until the execution has completed."/>
+            </property>
+            <property name="delay">
+                <property-ui type="textBox" default-value="6000" hidden="true" label="Delay Interval"
+                             description="The delay (in ms) to wait before re-checking the status."/>
+            </property>
+            <property name="outputProp">
+                <property-ui type="textBox" default-value="flowPrimaryResult" hidden="true" label="Flow Result Property"
+                             description="The name of the property to set the flow's primary result to (if successful)"/>
+            </property>
+            <property name="debugMode" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put(new java.lang.String("Status"), new java.lang.String("Failure"));
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/*"/>
+            <arg file="get_execution_status.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+    <!-- ==================================== -->
+    <!--  Get Execution Log as CSV            -->
+    <!-- ==================================== -->
+    <step-type name="Get Execution Log (CSV)">
+        <description>Get the execution log o a Micro Focus Operations Orchestration (OO) flow execution and save it to a file in CSV format</description>
+        <properties>
+            <property name="executionId" required="true">
+                <property-ui type="textBox" label="Execution Id" default-value="${p:prevStep/executionId}"
+                             description="The execution id to check the status of."/>
+            </property>
+            <property name="serverUrl" required="true">
+                <property-ui type="textBox" default-value="${p:system/oo.serverUrl}" label="OO Server URL"
+                             description="The OO server URL, e.g. https://server:8443"/>
+            </property>
+            <property name="username">
+                <property-ui type="textBox" default-value="${p:system/oo.username}" label="OO Username"
+                             description="The username to connect to the OO server."/>
+            </property>
+            <property name="password">
+                <property-ui type="secureBox" default-value="${p:system/oo.password}" label="OO Password"
+                             description="The password to connect to the OO server."/>
+            </property>
+            <property name="outputFile">
+                <property-ui type="textBox" default-value="flow-execution.csv" label="Execution File"
+                             description="The name of the file to write the execution log to."/>
+            </property>
+            <property name="debugMode" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put(new java.lang.String("Status"), new java.lang.String("Failure"));
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/*"/>
+            <arg file="get_execution_log_csv.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+</plugin>
