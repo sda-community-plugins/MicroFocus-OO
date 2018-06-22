@@ -81,7 +81,7 @@
     <!--  Get Execution Status                -->
     <!-- ==================================== -->
     <step-type name="Get Execution Status">
-        <description>Get the status of a Micro Focus Operations Orchestration (OO) flow execution</description>
+        <description>Get the status of a Micro Focus Operations Orchestration (OO) flow execution.</description>
         <properties>
             <property name="executionId" required="true">
                 <property-ui type="textBox" label="Execution Id" default-value="${p:prevStep/executionId}"
@@ -137,7 +137,7 @@
     <!--  Get Execution Log as CSV            -->
     <!-- ==================================== -->
     <step-type name="Get Execution Log (CSV)">
-        <description>Get the execution log o a Micro Focus Operations Orchestration (OO) flow execution and save it to a file in CSV format</description>
+        <description>Get the execution log of a Micro Focus Operations Orchestration (OO) flow execution and save it to a file in CSV format.</description>
         <properties>
             <property name="executionId" required="true">
                 <property-ui type="textBox" label="Execution Id" default-value="${p:prevStep/executionId}"
