@@ -109,10 +109,10 @@
   </meta-html>
 
   <!-- Do not change the release-version, the build process injects it. -->
-  <release-version>6.1.5</release-version>
+  <release-version></release-version>
 
     <!-- Do not change the server-versidn, the build process injects it. -->
-  <server-version>6.1.5</server-version>
+  <server-version></server-version>
 
     <release-notes>
     <!--

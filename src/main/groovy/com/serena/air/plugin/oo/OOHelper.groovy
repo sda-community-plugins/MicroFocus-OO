@@ -1,10 +1,12 @@
-package com.serena.air.oo
+package com.serena.air.plugin.oo
 
 import com.serena.air.StepFailedException
 import com.serena.air.http.HttpBaseClient
 import com.serena.air.http.HttpResponse
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import org.apache.http.NameValuePair
+import org.apache.http.message.BasicNameValuePair
 import org.apache.http.HttpEntity
 import org.apache.http.Header
 import org.apache.http.client.methods.HttpGet
@@ -129,9 +131,12 @@ class OOHelper extends HttpBaseClient {
         HttpResponse response = null
         if (startTimeFrom == 0)
             response = execGet("${EXECUTIONS_URL}/${executionId}/steps")
-        else
-            response = execGet("${EXECUTIONS_URL}/${executionId}/steps?startTimeFrom=${startTimeFrom}")
-        checkStatusCode(response.code)
+        else {
+            List<NameValuePair> nvps = new ArrayList<NameValuePair>()
+            nvps.add(new BasicNameValuePair("startTimeFrom", startTimeFrom.toString()))
+            response = execGet("${EXECUTIONS_URL}/${executionId}/steps", nvps)
+        }
+            checkStatusCode(response.code)
         def json = new JsonSlurper().parseText(response.body)
         debug(json.toString())
         return json
@@ -143,7 +148,9 @@ class OOHelper extends HttpBaseClient {
      * @return JSON object with log of the execution
      */
     def getExecutionLogCSV(String executionId) {
-        HttpResponse response = execGet("${EXECUTIONS_URL}/${executionId}/steps?mediaType=csv")
+        List<NameValuePair> nvps = new ArrayList<NameValuePair>()
+        nvps.add(new BasicNameValuePair("mediaType", "csv"))
+        HttpResponse response = execGet("${EXECUTIONS_URL}/${executionId}/steps", nvps)
         checkStatusCode(response.code)
         return response.body
     }
@@ -160,16 +167,16 @@ class OOHelper extends HttpBaseClient {
 
     def debug(String message) {
         if (this.debug) {
-            println("[DEBUG] ${message}")
+            println("DEBUG - ${message}")
         }
     }
 
     def info(String message) {
-        println("[INFO] ${message}")
+        println("INFO - ${message}")
     }
 
     def error(String message) {
-        println("[ERROR] ${message}")
+        println("ERROR - ${message}")
     }
 
     //
@@ -177,6 +184,7 @@ class OOHelper extends HttpBaseClient {
     //
 
     private HttpResponse execMethod(def method) {
+        debug("Executing REST call: " + method.toString())
         try {
             return exec(method)
         } catch (UnknownHostException e) {
@@ -186,8 +194,13 @@ class OOHelper extends HttpBaseClient {
         }
     }
 
-    private HttpResponse execGet(def url) {
-        HttpGet method = new HttpGet(getUriBuilder(url.toString()).build())
+    private HttpResponse execGet(def url, List<NameValuePair> params = null) {
+        HttpGet method
+        if (params) {
+           method = new HttpGet(getUriBuilder(url.toString()).addParameters(params).build())
+        } else {
+            method = new HttpGet(getUriBuilder(url.toString()).build())
+        }
         return execMethod(method)
     }
 

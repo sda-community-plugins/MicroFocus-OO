@@ -1,11 +1,11 @@
-package main.groovy.com.serena.air.oo
+package com.serena.air.plugin.oo
 
-import com.serena.air.oo.OOHelper
+import com.serena.air.plugin.oo.OOHelper
 import org.json.JSONObject
 
-def oServerUrl = "https://st8590.serena.com:7443"
-def oUsername = "admin"
-def oPassword = "admin"
+def oServerUrl = "https://oo.microfocus.com:8443"
+def oUsername = ""
+def oPassword = "!"
 
 def flowId = "06fe8531-868b-4e79-aa7a-13a5e30a66ec"
 //def flowId = "0127e497-ed82-4114-9124-6614ebf18647"
@@ -14,8 +14,8 @@ min=1
 max=10
 """
 Map<String,String> inputsMap = new HashMap<String,String>()
-//inputs.put("min", "1")
-//inputs.put("max", "10")
+inputs.put("min", "1")
+inputs.put("max", "10")
 
 inputs?.eachLine {
     if (it && it.trim().length() > 0 && it.indexOf('=') > -1) {

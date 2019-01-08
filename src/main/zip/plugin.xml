@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://www.urbancode.com/PluginXMLSchema_v1">
     <header>
-        <identifier version="1" id="com.urbancode.air.plugin.MicroFocus-OO"
+        <identifier version="1" id="com.serena.air.plugin.MicroFocus-OO"
                     name="Micro Focus Operations Orchestration"/>
         <description>The Micro Focus Operations Orchestration (OO) plugin allows you to execute Operations Orchestration
             flows as part of a workflow.
         </description>
-        <tag>Automation/Operations Orchestration</tag>
+        <tag>Automation/Micro Focus/Operations Orchestration</tag>
     </header>
     <!-- ==================================== -->
     <!--  Execute Flow                        -->

@@ -1,24 +1,80 @@
+// --------------------------------------------------------------------------------
+// Execute an Operations Orchestration flow
+// --------------------------------------------------------------------------------
+
+import com.serena.air.plugin.oo.*
+
 import com.serena.air.StepFailedException
 import com.serena.air.StepPropertiesHelper
-import com.serena.air.oo.OOHelper
 import com.urbancode.air.AirPluginTool
 
-def apTool = new AirPluginTool(args[0], args[1])
-def props = new StepPropertiesHelper(apTool.stepProperties, true)
+//
+// Create some variables that we can use throughout the plugin step.
+// These are mainly for checking what operating system we are running on.
+//
+final def PLUGIN_HOME = System.getenv()['PLUGIN_HOME']
+final String lineSep = System.getProperty('line.separator')
+final String osName = System.getProperty('os.name').toLowerCase(Locale.US)
+final String pathSep = System.getProperty('path.separator')
+final boolean windows = (osName =~ /windows/)
+final boolean vms = (osName =~ /vms/)
+final boolean os9 = (osName =~ /mac/ && !osName.endsWith('x'))
+final boolean unix = (pathSep == ':' && !vms && !os9)
+
+//
+// Initialise the plugin tool and retrieve all the properties that were sent to the step.
+//
+final def  apTool = new AirPluginTool(this.args[0], this.args[1])
+final def  props  = new StepPropertiesHelper(apTool.getStepProperties(), true)
+
+//
+// Set a variable for each of the plugin steps's inputs.
+// We can check whether a required input is supplied (the helper will fire an exception if not) and
+// if it is of the required type.
+//
+File workDir = new File('.').canonicalFile
+String oServerUrl = props.notNull('serverUrl')
+String oUsername = props.notNull('username')
+String oPassword = props.notNull('password')
+String flowId = props.notNull('flowId')
+String runName = props.optional("runName")
+String logLevel = props.optional("logLevel", "STANDARD")
+String inputs = props.optional("inputs")
+boolean waitForCompletion = props.optionalBoolean("waitForCompletion", false)
+String outputProp = props.optional("outputProp", "flowPrimaryResult")
+long delay = props.optionalInt("delay", 6000)
+boolean debugMode = props.optionalBoolean("debugMode", false)
+
+println "----------------------------------------"
+println "-- STEP INPUTS"
+println "----------------------------------------"
+
+//
+// Print out each of the property values.
+//
+println "Working directory: ${workDir.canonicalPath}"
+println "OO Server URL: ${oServerUrl}"
+println "OO Username: ${oUsername}"
+println "OO Password: ${oPassword.replaceAll(".", "*")}"
+println "Flow Id: ${flowId}"
+println "Run Name: ${runName}"
+println "LOO Log Level: ${logLevel}"
+println "Inputs:\n${inputs}"
+println "Wait for Completion: ${waitForCompletion}"
+println "Flow Result Property: ${outputProp}"
+println "Delay Interval: ${delay}"
+println "Debug mode value: ${debugMode}"
+if (debugMode) { props.setDebugLoggingMode() }
+
+println "----------------------------------------"
+println "-- STEP EXECUTION"
+println "----------------------------------------"
+
+def executionId
+def status = "UNKNOWN"
+def result = "UNKNOWN"
 
 try {
-    String oServerUrl = props.notNull('serverUrl')
-    String oUsername = props.notNull('username')
-    String oPassword = props.notNull('password')
-    String flowId = props.notNull('flowId')
-    String runName = props.optional("runName")
-    String logLevel = props.optional("logLevel", "STANDARD")
-    String inputs = props.optional("inputs")
-    boolean waitForCompletion = props.optionalBoolean("waitForCompletion", false)
-    String outputProp = props.optional("outputProp", "flowPrimaryResult")
-    long delay = props.optionalInt("delay", 6000)
-    boolean debugMode = props.optionalBoolean("debugMode", false)
-
     OOHelper oClient = new OOHelper(oServerUrl, oUsername, oPassword)
 
     oClient.setPreemptiveAuth()
@@ -47,11 +103,9 @@ try {
 
     long startTime = new Date().getTime();
     oClient.debug("Current UNIX time is: ${startTime}")
-    def executionId = oClient.executeFlow(flowId, runName, logLevel, inputsMap)
+    executionId = oClient.executeFlow(flowId, runName, logLevel, inputsMap)
     println("Execution id: \"${executionId}\"")
 
-    def status = "UNKNOWN"
-    def result = "UNKNOWN"
     if (waitForCompletion) {
         def running = true
         while (running) {
@@ -87,15 +141,11 @@ try {
         result = json?.resultStatusName[0]
     }
 
-    apTool.setOutputProperty("executionId", executionId)
-
     if (status != null) {
         println("Execution status is \"${status}\"")
-        apTool.setOutputProperty("executionStatus", status)
     }
     if (result != null) {
         println("Execution result is \"${result}\"")
-        apTool.setOutputProperty("executionResult", result)
     }
 
     if (status.equals("COMPLETED")) {
@@ -104,18 +154,38 @@ try {
         json = oClient.getExecutionLog(executionId)
         result =  (json?.rawResult.Result[0] ? json?.rawResult.Result[0] : "none")
         println("Primary result: \"${result}\"")
-        apTool.setOutputProperty(outputProp, result)
     }
-
-    apTool.storeOutputProperties()
 
     if (status.equals("FAILURE")) {
         System.exit 1
-    } else {
-        System.exit 0
     }
 
 } catch (StepFailedException e) {
     println "ERROR: ${e.message}"
     System.exit 1
 }
+
+println "----------------------------------------"
+println "-- STEP OUTPUTS"
+println "----------------------------------------"
+println("Setting \"executionId\" output property to \"${executionId}\"")
+apTool.setOutputProperty("executionId", executionId)
+if (status != null) {
+    println("Setting \"executionStatus\" output property to \"${status}\"")
+    apTool.setOutputProperty("executionStatus", status)
+}
+if (result != null) {
+    println("Setting \"executionResult\" output property to \"${result}\"")
+    apTool.setOutputProperty("executionResult", result)
+}
+if (status.equals("COMPLETED")) {
+    println("Setting \"${outputProp}\" output property to \"${result}\"")
+    apTool.setOutputProperty(outputProp, result)
+
+}
+apTool.storeOutputProperties()
+
+//
+// An exit with a zero value means the plugin step execution will be deemed successful.
+//
+System.exit(0)
